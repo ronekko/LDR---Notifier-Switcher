@@ -3,10 +3,35 @@
 // @namespace      http://profile.livedoor.com/ronekko/
 // @description    LDRの更新通知設定切り替えボタンをフィードのヘッダに設置する
 // @include        http://reader.livedoor.com/reader/
+// @include        http://reader.livedoor.com/subscribe/*
 // @version        20101112
 // ==/UserScript==
 
 var w = unsafeWindow;
+
+if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
+	(function(){
+		var params = GM_getValue('params');
+		params = params ? JSON.parse(params) : [];
+		var form = document.querySelector('.page_subscribe form');
+		
+		form.addEventListener('submit', function(e){
+			var links = [];
+			var feedlinks = document.getElementsByName('feedlink');
+			Array.forEach(feedlinks, function(el){
+				el.checked && links.push(el.value);
+			});
+			if(!links.length) return;
+			
+			var param = {feedlinks: links, ignore: 1};
+			params.push(param)
+			var json = JSON.stringify(params);
+			GM_setValue('params', json);
+			
+		}, true);
+	})();
+	return;
+}
 
 GM_addStyle('.widget_toggle_button_for_notifier{border: solid thin #777777; padding: 1px; color:#222222; background-color: #D7EBFF; cursor: pointer;}');
 GM_addStyle('.widget_toggle_button_for_notifier_on{background-color: #AAFFAA;}');
