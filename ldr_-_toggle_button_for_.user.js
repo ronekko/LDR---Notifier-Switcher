@@ -8,8 +8,8 @@
 // ==/UserScript==
 
 var w = unsafeWindow;
-var l = w.console.log;
-var d = w.console.dir;
+var l = w.console ? w.console.log : function(){};
+var d = w.console ? w.console.dir : function(){};
 
 if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 	(function(){
