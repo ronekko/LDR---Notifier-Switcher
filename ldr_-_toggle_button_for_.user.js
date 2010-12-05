@@ -8,6 +8,8 @@
 // ==/UserScript==
 
 var w = unsafeWindow;
+var l = w.console.log;
+var d = w.console.dir;
 
 if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 	(function(){
@@ -27,7 +29,6 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 			params.push(param)
 			var json = JSON.stringify(params);
 			GM_setValue('params', json);
-			
 		}, true);
 	})();
 	return;
@@ -83,4 +84,65 @@ w.register_hook('AFTER_PRINTFEED', function(feed){
 			tbfn.textContent = '通知[有効]';
 		}
 	}
+});
+
+w.register_hook('AFTER_SUBS_LOAD', function(){
+	setTimeout(function(){
+		var params = GM_getValue('params');
+		if(!params){ return; }
+		
+		params = JSON.parse(params);
+		var feedInfo = {};
+		var len = params.length;
+		params.forEach(function(param){
+			var ignore = param.ignore;
+			param.feedlinks.forEach(function(feedlink){
+				feedInfo[feedlink] = ignore;
+			});
+		});
+		
+		GM_xmlhttpRequest({
+			method : "POST",
+			url : 'http://reader.livedoor.com/api/lite_subs',
+			data : w.Object.toQuery({ApiKey : w.LDR_getApiKey()}),
+			headers : { 'Content-Type' : 'application/x-www-form-urlencoded' },
+			onload :  function(res){
+				mySubs = {};
+				var feeds = JSON.parse(res.responseText);
+				feeds.filter(function(feed){
+					return feedInfo[feed.feedlink];
+				})
+				.forEach(function(feed){
+					setTimeout(function(param){
+						GM_xmlhttpRequest({
+							method : "POST",
+							url : 'http://reader.livedoor.com/api/feed/set_notify',
+							data : w.Object.toQuery({
+								ApiKey : w.LDR_getApiKey(),
+								subscribe_id : param._sid,
+								ignore : param._ignore
+							}),
+							headers : { 'Content-Type' : 'application/x-www-form-urlencoded' },
+							onload :  function(res){
+								delete feedInfo[param._feedlink];
+							}
+						});
+					}, 0, {_sid:feed.subscribe_id, _ignore:feedInfo[feed.feedlink], _feedlink: feed.feedlink});
+				});
+			}
+		});
+		
+		setTimeout(function(){
+			if(isEmpty(feedInfo)){
+				GM_setValue('params', '');
+			}else{
+				setTimeout(arguments.callee, 1000);
+			}
+		}, 1000);
+			
+		function isEmpty(obj){
+			for(var k in obj) return false;
+			return true;
+		}
+	}, 0);
 });
