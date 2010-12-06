@@ -4,7 +4,7 @@
 // @description    LDRの更新通知設定切り替えボタンをフィードのヘッダに設置する
 // @include        http://reader.livedoor.com/reader/
 // @include        http://reader.livedoor.com/subscribe/*
-// @version        20101112
+// @version        20101207
 // ==/UserScript==
 
 var w = unsafeWindow;
@@ -53,12 +53,12 @@ w.channel_widgets.add('toggle_button_for_notifier', function(feed){
 });
 
 w.register_hook('AFTER_PRINTFEED', function(feed){
-	var sid = feed.subscribe_id;
-	var item = w.subs_item(sid);
-	var ignore = !!item.ignore_notify;
+	var _sid = feed.subscribe_id;
+	var item = w.subs_item(_sid);
+	var _ignore = !!item.ignore_notify;
 	var tbfn = document.getElementsByClassName('widget_toggle_button_for_notifier')[0];
 	
-	setState(ignore);
+	setState(_ignore);
 	tbfn.addEventListener('click', function(){
 		setTimeout(function(param){
 			GM_xmlhttpRequest({
@@ -66,24 +66,25 @@ w.register_hook('AFTER_PRINTFEED', function(feed){
 				url : 'http://reader.livedoor.com/api/feed/set_notify',
 				data : w.Object.toQuery({
 					ApiKey : w.LDR_getApiKey(),
-					subscribe_id : param._sid,
-					ignore : param._ignore ? 1 : 0
+					subscribe_id : param.sid,
+					ignore : param.ignore ? 1 : 0
 				}),
 				headers : { 'Content-Type' : 'application/x-www-form-urlencoded' },
 				onload :  function(res){
-					if(param._ignore){
+					if(param.ignore){
 						w.message("通知設定を無効にしました");
 					}else{
 						w.message("通知設定を有効にしました");
 					}
 					
-					if(w.get_active_feed().subscribe_id === param._sid){
-						setState(param._ignore);
+					if(w.get_active_feed().subscribe_id === param.sid){
+						setState(param.ignore);
 					}
-					ignore = param._ignore;
+					_ignore = param.ignore;
+					item.ignore_notify = param.ignore ? 1 : 0;
 				}
 			});
-		}, 0, {_sid:sid, _ignore:!ignore});
+		}, 0, {sid:_sid, ignore:!_ignore});
 	}, false);
 	
 	function setState(ignore){
@@ -130,15 +131,17 @@ w.register_hook('AFTER_SUBS_LOAD', function(){
 							url : 'http://reader.livedoor.com/api/feed/set_notify',
 							data : w.Object.toQuery({
 								ApiKey : w.LDR_getApiKey(),
-								subscribe_id : param._sid,
-								ignore : param._ignore
+								subscribe_id : param.sid,
+								ignore : param.ignore
 							}),
 							headers : { 'Content-Type' : 'application/x-www-form-urlencoded' },
 							onload :  function(res){
-								delete feedInfo[param._feedlink];
+								delete feedInfo[param.feedlink];
+								var item = w.subs_item(param.sid);
+								item.ignore_notify = param.ignore;
 							}
 						});
-					}, 0, {_sid:feed.subscribe_id, _ignore:feedInfo[feed.feedlink], _feedlink: feed.feedlink});
+					}, 0, {sid:feed.subscribe_id, ignore:feedInfo[feed.feedlink], feedlink: feed.feedlink});
 				});
 			}
 		});
@@ -150,7 +153,7 @@ w.register_hook('AFTER_SUBS_LOAD', function(){
 				setTimeout(arguments.callee, 1000);
 			}
 		}, 1000);
-			
+		
 		function isEmpty(obj){
 			for(var k in obj) return false;
 			return true;
