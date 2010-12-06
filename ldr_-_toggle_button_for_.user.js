@@ -18,7 +18,9 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 		
 		var tbody = document.querySelector('.subscribe_option table tbody');
 		if(!tbody){ return; }
-		tbody.innerHTML += '<tr><th> 更新通知設定</th> <td> <input checked="checked" value="0" name="notifier" id="notifier_0" type="radio"><label for="notifier_0">通知する</label> <input value="1" name="notifier" id="notifier_1" type="radio"><label for="notifier_1">通知しない</label> </td> </tr>'
+		var tr = document.createElement('tr');
+		tbody.appendChild(tr);
+		tr.innerHTML = '<th> 更新通知設定</th> <td> <input checked="checked" value="0" name="notifier" id="notifier_0" type="radio"><label for="notifier_0">通知する</label> <input value="1" name="notifier" id="notifier_1" type="radio"><label for="notifier_1">通知しない</label> </td>'
 		
 		var form = document.querySelector('.page_subscribe form');
 		
