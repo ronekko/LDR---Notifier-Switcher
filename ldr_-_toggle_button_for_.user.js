@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name           LDR - Toggle Button for Notifier
+// @name           LDR - Notifier Switcher
 // @namespace      http://profile.livedoor.com/ronekko/
-// @description    LDRの更新通知設定切り替えボタンをフィードのヘッダに設置する
+// @description    LDRの更新通知設定まわりを補助する（フィード登録画面での通知設定、フィードごとに通知切り替えボタン）
 // @include        http://reader.livedoor.com/reader/
 // @include        http://reader.livedoor.com/subscribe/*
 // @version        20101207
@@ -17,8 +17,9 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 		params = params ? JSON.parse(params) : [];
 		
 		var tbody = document.querySelector('.subscribe_option table tbody');
+		if(!tbody){ return; }
 		tbody.innerHTML += '<tr><th> 更新通知設定</th> <td> <input checked="checked" value="0" name="notifier" id="notifier_0" type="radio"><label for="notifier_0">通知する</label> <input value="1" name="notifier" id="notifier_1" type="radio"><label for="notifier_1">通知しない</label> </td> </tr>'
-			
+		
 		var form = document.querySelector('.page_subscribe form');
 		
 		form.addEventListener('submit', function(e){
