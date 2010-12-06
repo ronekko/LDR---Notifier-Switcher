@@ -15,6 +15,10 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 	(function(){
 		var params = GM_getValue('params');
 		params = params ? JSON.parse(params) : [];
+		
+		var tbody = document.querySelector('.subscribe_option table tbody');
+		tbody.innerHTML += '<tr><th> 更新通知設定</th> <td> <input checked="checked" value="0" name="notifier" id="notifier_0" type="radio"><label for="notifier_0">通知する</label> <input value="1" name="notifier" id="notifier_1" type="radio"><label for="notifier_1">通知しない</label> </td> </tr>'
+			
 		var form = document.querySelector('.page_subscribe form');
 		
 		form.addEventListener('submit', function(e){
@@ -25,7 +29,14 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 			});
 			if(!links.length) return;
 			
-			var param = {feedlinks: links, ignore: 1};
+			var notifiers = document.getElementsByName('notifier');
+			var _ignore;
+			Array.forEach(notifiers, function(el){
+				if(el.checked){
+					_ignore = el.value;
+				}
+			});
+			var param = {feedlinks: links, ignore: _ignore};
 			params.push(param)
 			var json = JSON.stringify(params);
 			GM_setValue('params', json);
