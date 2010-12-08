@@ -4,7 +4,7 @@
 // @description    LDRの更新通知設定まわりを補助する（フィード登録画面での通知設定、フィードごとに通知切り替えボタン）
 // @include        http://reader.livedoor.com/reader/
 // @include        http://reader.livedoor.com/subscribe/*
-// @version        20101207
+// @version        20101208
 // ==/UserScript==
 
 var w = unsafeWindow;
@@ -28,7 +28,7 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 			var links = [];
 			var feedlinks = document.getElementsByName('feedlink');
 			Array.forEach(feedlinks, function(el){
-				el.checked && links.push(el.value);
+				el.checked && links.push(w.String.prototype.escapeHTML.call(el.value));
 			});
 			if(!links.length) return;
 			
@@ -36,11 +36,11 @@ if(location.href.indexOf('http://reader.livedoor.com/subscribe/') === 0){
 			var _ignore;
 			Array.forEach(notifiers, function(el){
 				if(el.checked){
-					_ignore = el.value;
+					_ignore = parseInt(el.value, 10);
 				}
 			});
 			var param = {feedlinks: links, ignore: _ignore};
-			params.push(param)
+			params.push(param);
 			var json = JSON.stringify(params);
 			GM_setValue('params', json);
 		}, true);
@@ -107,12 +107,11 @@ w.register_hook('AFTER_SUBS_LOAD', function(){
 		if(!params){ return; }
 		
 		params = JSON.parse(params);
+		
 		var feedInfo = {};
-		var len = params.length;
 		params.forEach(function(param){
-			var ignore = param.ignore;
-			param.feedlinks.forEach(function(feedlink){
-				feedInfo[feedlink] = ignore;
+			param.feedlinks.forEach(function(_feedlink){
+				feedInfo[_feedlink] = {feedlink:_feedlink, ignore:param.ignore};
 			});
 		});
 		
@@ -122,12 +121,12 @@ w.register_hook('AFTER_SUBS_LOAD', function(){
 			data : w.Object.toQuery({ApiKey : w.LDR_getApiKey()}),
 			headers : { 'Content-Type' : 'application/x-www-form-urlencoded' },
 			onload :  function(res){
-				mySubs = {};
 				var feeds = JSON.parse(res.responseText);
 				feeds.filter(function(feed){
 					return feedInfo[feed.feedlink];
 				})
 				.forEach(function(feed){
+					feedInfo[feed.feedlink].sid = feed.subscribe_id;
 					setTimeout(function(param){
 						GM_xmlhttpRequest({
 							method : "POST",
@@ -144,7 +143,7 @@ w.register_hook('AFTER_SUBS_LOAD', function(){
 								item.ignore_notify = param.ignore;
 							}
 						});
-					}, 0, {sid:feed.subscribe_id, ignore:feedInfo[feed.feedlink], feedlink: feed.feedlink});
+					}, 0, feedInfo[feed.feedlink]);
 				});
 			}
 		});
